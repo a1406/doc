@@ -5,6 +5,22 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+// /* thread status */
+// #define LUA_OK	  0
+// #define LUA_YIELD	  1
+// #define LUA_ERRRUN  2
+// #define LUA_ERRSYNTAX	  3
+// #define LUA_ERRMEM  4
+// #define LUA_ERRERR  5
+static const char *resume_msg[] = {
+	"LUA_OK",
+	"LUA_YIELD",
+	"LUA_ERRRUN",
+	"LUA_ERRSYNTAX",
+	"LUA_ERRMEM",
+	"LUA_ERRERR",
+};
+
 static lua_State *gL;
 
 struct sleep_data
@@ -60,7 +76,8 @@ static void run_thread(const char *func_name)
 {
 	lua_State *th1 = lua_newthread(gL);
 	lua_getglobal(th1, func_name);
-	lua_resume(th1, 0);
+	int ret = lua_resume(th1, 0);
+	printf("run_thread %s, return %s\n", func_name, resume_msg[ret]);
 }
 
 int main(int argc, char *argv[])
@@ -75,6 +92,8 @@ int main(int argc, char *argv[])
 
 	run_thread("th1_func");
 	run_thread("th2_func");
+	run_thread("th3_func");
+	run_thread("th4_func");	
 	
 	for (;;) {
 		sleep(1);
@@ -88,7 +107,8 @@ int main(int argc, char *argv[])
 			if (sleep_data[i].timeout == 0)
 			{
 				sleep_data[i].timeout = -1;
-				lua_resume(sleep_data[i].th, 0);
+				int ret = lua_resume(sleep_data[i].th, 0);
+				printf("sleep_data %d, return %s\n", i, resume_msg[ret]);
 			}
 		}
 	}
